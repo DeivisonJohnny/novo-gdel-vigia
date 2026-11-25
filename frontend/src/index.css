@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --fundo: 246 247 249;
+  --superficie: 255 255 255;
+  --elevada: 250 250 251;
+  --borda: 228 230 235;
+  --texto: 17 20 26;
+  --suave: 82 88 102;
+  --fraco: 134 140 153;
+  --primaria: 31 111 235;
+  --primaria-texto: 255 255 255;
+  --alerta: 217 45 32;
+  --atencao: 196 120 0;
+  --sucesso: 21 128 61;
+  --info: 31 111 235;
+  --revisao: 124 58 237;
+  --serie-1: #2a78d6;
+  --serie-2: #eb6834;
+  --grade: rgb(228 230 235);
+}
+
+:root.dark {
+  color-scheme: dark;
+  --fundo: 11 13 17;
+  --superficie: 19 22 28;
+  --elevada: 26 30 38;
+  --borda: 40 45 56;
+  --texto: 236 238 242;
+  --suave: 166 173 187;
+  --fraco: 112 119 133;
+  --primaria: 72 140 245;
+  --primaria-texto: 255 255 255;
+  --alerta: 244 92 80;
+  --atencao: 236 170 52;
+  --sucesso: 64 190 110;
+  --info: 92 156 245;
+  --revisao: 167 139 250;
+  --serie-1: #3987e5;
+  --serie-2: #d95926;
+  --grade: rgb(40 45 56);
+}
+
+html, body, #raiz { height: 100%; }
+
+body {
+  @apply bg-fundo text-texto font-sans antialiased;
+  font-feature-settings: "tnum" 1;
+}
+
+* { @apply border-borda; }
+
+::selection { background: rgb(var(--primaria) / 0.25); }
+
+.foco { @apply outline-none focus-visible:ring-2 focus-visible:ring-primaria/60 focus-visible:ring-offset-2 focus-visible:ring-offset-fundo; }
+
+.rolagem::-webkit-scrollbar { width: 8px; height: 8px; }
+.rolagem::-webkit-scrollbar-thumb { background: rgb(var(--borda)); border-radius: 8px; }

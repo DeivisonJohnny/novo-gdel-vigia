@@ -1,0 +1,25 @@
+[Unit]
+Description=GDEL Vigia - detecção e painel
+After=network-online.target docker.service vigia-backend.service
+Wants=network-online.target
+Requires=vigia-backend.service
+
+[Service]
+Type=simple
+User=vigia
+Group=vigia
+WorkingDirectory=/opt/gdel-vigia/visao
+Environment=VIGIA_AMBIENTE=prod
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=/opt/gdel-vigia/visao/.env
+ExecStart=/opt/gdel-vigia/.venv/bin/python -m vigia servir
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/gdel-vigia/visao/dados /opt/gdel-vigia/roteador/gravacoes
+
+[Install]
+WantedBy=multi-user.target

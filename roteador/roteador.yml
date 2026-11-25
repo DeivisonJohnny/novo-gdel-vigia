@@ -1,0 +1,50 @@
+portas:
+  rtmp: 1935
+  rtsp: 8554
+  api: 9997
+  playback: 9996
+
+webrtc:
+  porta: 8889
+  udp: 8189
+  tcp: 8190
+  hosts_publicos: []
+  origens: []
+
+gravacao:
+  ativa: true
+  pasta: /gravacoes
+  segmento: 60s
+  manter: 12h
+
+cameras:
+  bolognalife2:
+    caminho: live/bolognalife2
+    usuario: bologna
+    senha: ${CAM_BOLOGNALIFE2_SENHA}
+  bolognalife2b:
+    caminho: live/bolognalife2b
+    usuario: bologna2
+    senha: ${CAM_BOLOGNALIFE2B_SENHA}
+  itacolomi:
+    caminho: live/itacolomi
+    usuario: itacolomi
+    senha: ${CAM_ITACOLOMI_SENHA}
+  abbott1:
+    caminho: live/abbott1
+    usuario: abbott1
+    senha: ${CAM_ABBOTT1_SENHA}
+  abbott2:
+    caminho: live/abbott2
+    usuario: abbott2
+    senha: ${CAM_ABBOTT2_SENHA}
+
+leitores:
+  - usuario: leitor
+    senha: ${LEITOR_SENHA}
+    ips: []
+
+destinos:
+  - nome: espelho
+    ativo: false
+    url: rtmp://IP_DO_ESPELHO:1935/{caminho}?user=roteador&pass=${DESTINO_ESPELHO_SENHA}

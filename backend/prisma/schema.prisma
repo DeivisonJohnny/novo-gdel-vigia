@@ -1,0 +1,155 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id           Int      @id @default(autoincrement())
+  nome         String
+  email        String   @unique
+  senha        String
+  papel        String
+  ativo        Boolean  @default(true)
+  criadoEm     Float?   @map("criado_em")
+  ultimoAcesso Float?   @map("ultimo_acesso")
+  sessoes      Sessao[]
+
+  @@map("usuarios")
+}
+
+model Sessao {
+  token     String  @id
+  usuarioId Int     @map("usuario_id")
+  criadaEm  Float?  @map("criada_em")
+  expiraEm  Float?  @map("expira_em")
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
+  @@index([expiraEm])
+  @@map("sessoes")
+}
+
+model Pagamento {
+  id         String  @id
+  horario    Float?
+  valor      Float?
+  situacao   String?
+  qtdItens   Int?    @map("qtd_itens")
+  pdv        String?
+  loja       String?
+  metodo     String?
+  itens      Json?
+  recebidoEm Float?  @map("recebido_em")
+  visitaId   String? @map("visita_id")
+
+  @@index([horario], map: "pagamentos_horario")
+  @@map("pagamentos")
+}
+
+model Movimentacao {
+  id         BigInt   @id
+  data       Float?
+  tipo       String?
+  produtoId  BigInt?  @map("produto_id")
+  quantidade Int?
+  final      Int?
+  usuario    String?
+  humana     Boolean?
+  contagem   Int?
+  pdv        String?
+
+  @@index([data], map: "movimentacoes_data")
+  @@map("movimentacoes")
+}
+
+model Visita {
+  id          String   @id
+  loja        String?
+  inicio      Float?
+  fim         Float?
+  cameras     Json?
+  pegadas     Int?
+  foiTotem    Boolean? @map("foi_totem")
+  score       Int?
+  nivel       String?
+  pagamentoId String?  @map("pagamento_id")
+  dados       Json?
+  decididaEm  Float?   @map("decidida_em")
+
+  @@index([inicio], map: "visitas_inicio")
+  @@map("visitas")
+}
+
+model Ocorrencia {
+  id          Int     @id @default(autoincrement())
+  visitaId    String? @unique @map("visita_id")
+  loja        String?
+  cameras     Json?
+  criadaEm    Float?  @map("criada_em")
+  inicio      Float?
+  fim         Float?
+  score       Int?
+  nivel       String?
+  situacao    String? @default("aberta")
+  motivos     Json?
+  evidencias  Json?
+  clipes      Json?   @default("[]")
+  resolucao   String?
+  resolvidaEm Float?  @map("resolvida_em")
+  veredito    String?
+  observacao  String?
+  revisadaPor String? @map("revisada_por")
+  revisadaEm  Float?  @map("revisada_em")
+  ia          Json?
+  tipo        String  @default("suspeita")
+
+  @@index([criadaEm], map: "ocorrencias_criada")
+  @@index([fim])
+  @@map("ocorrencias")
+}
+
+model LojaCadastrada {
+  chave    String  @id
+  nome     String
+  pdv      String?
+  criadaEm Float?  @map("criada_em")
+
+  @@map("lojas_cadastradas")
+}
+
+model CameraCadastrada {
+  nome      String  @id
+  descricao String?
+  loja      String
+  caminho   String
+  usuario   String
+  senha     String
+  criadaEm  Float?  @map("criada_em")
+
+  @@map("cameras_cadastradas")
+}
+
+model MaquininhaMarcada {
+  camera     String  @id
+  caixas     Json
+  origem     String  @default("manual")
+  marcadaPor String? @map("marcada_por")
+  marcadaEm  Float?  @map("marcada_em")
+
+  @@map("maquininhas_marcadas")
+}
+
+model RecorteSemCompra {
+  loja        String  @id
+  ativo       Boolean @default(false)
+  esperaS     Int     @map("espera_s")
+  alteradoPor String? @map("alterado_por")
+  alteradoEm  Float?  @map("alterado_em")
+
+  @@map("recorte_sem_compra")
+}

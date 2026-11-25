@@ -1,0 +1,52 @@
+# Config do MediaMTX só para desenvolvimento local via docker-compose.yml da raiz.
+# Sem autenticação e com paths abertos: publique um stream de teste com ffmpeg/OBS
+# apontando para rtmp://127.0.0.1:1935/live/<camera> (vide config/vigia.yml > cameras).
+# NÃO usar em produção — para isso use roteador/roteador.yml + roteador/gerar.py.
+logLevel: info
+readTimeout: 30s
+writeTimeout: 30s
+
+hls: false
+srt: false
+moq: false
+
+rtsp: true
+rtspTransports: [tcp]
+rtspAddress: :8554
+
+rtmp: true
+rtmpAddress: :1935
+
+webrtc: true
+webrtcAddress: :8889
+webrtcLocalUDPAddress: :8189
+webrtcLocalTCPAddress: :8190
+webrtcIPsFromInterfaces: true
+webrtcAllowOrigins: ["*"]
+
+api: true
+apiAddress: :9997
+
+playback: true
+playbackAddress: :9996
+
+authMethod: internal
+authInternalUsers:
+  - user: any
+    pass: ""
+    ips: []
+    permissions:
+      - action: publish
+      - action: read
+      - action: playback
+      - action: api
+
+pathDefaults:
+  record: true
+  recordPath: /gravacoes/%path/%Y-%m-%d_%H-%M-%S-%f%z
+  recordFormat: fmp4
+  recordSegmentDuration: 60s
+  recordDeleteAfter: 48h
+
+paths:
+  all_others: {}

@@ -1,0 +1,110 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: vigia
+      POSTGRES_PASSWORD: vigia
+      POSTGRES_DB: vigia
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vigia -d vigia"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    image: node:20-slim
+    working_dir: /app
+    command: sh -c "npm ci && npx prisma generate && npx prisma migrate deploy && npm run prisma:seed; npm run dev"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://vigia:vigia@postgres:5432/vigia
+      VIGIA_PORTA_BACKEND: 3000
+      VIGIA_HOST_BACKEND: 0.0.0.0
+      VIGIA_COOKIE_SEGURO: "false"
+    volumes:
+      - ./backend:/app
+      - backend_node_modules:/app/node_modules
+    ports:
+      - "3000:3000"
+
+  roteador-espelho:
+    image: python:3.12-slim
+    working_dir: /app
+    command: sh -c "pip install --no-cache-dir pyyaml && python roteador/gerar_espelho_dev.py"
+    environment:
+      VIGIA_IP_PUBLICO: ${VIGIA_IP_PUBLICO:-187.111.24.162}
+      VIGIA_PORTA_RTMP: ${VIGIA_PORTA_RTMP:-1945}
+      VIGIA_LEITOR_SENHA: ${VIGIA_LEITOR_SENHA:-}
+    volumes:
+      - ./roteador:/app/roteador
+
+  roteador:
+    image: bluenviron/mediamtx:1.21.3-ffmpeg
+    depends_on:
+      roteador-espelho:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    command: ["/mediamtx.yml"]
+    volumes:
+      - ./roteador/mediamtx.yml:/mediamtx.yml:ro
+      - roteador_gravacoes_dev:/gravacoes
+    ports:
+      - "9997:9997"
+    ulimits:
+      core: 0
+
+  visao:
+    image: python:3.12-slim
+    working_dir: /app/visao
+    command: sh -c "apt-get update && apt-get install -y --no-install-recommends ffmpeg libgl1 libglib2.0-0 &&
+                    pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu &&
+                    pip install --no-cache-dir -r requirements.txt &&
+                    python -m vigia servir"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      backend:
+        condition: service_started
+      roteador:
+        condition: service_started
+    environment:
+      VIGIA_AMBIENTE: docker
+      DATABASE_URL: postgresql://vigia:vigia@postgres:5432/vigia
+    env_file:
+      - ./visao/.env
+    volumes:
+      - ./visao:/app/visao
+      - visao_pip_cache:/root/.cache/pip
+    ports:
+      - "8000:8000"
+
+  frontend:
+    image: node:20-slim
+    working_dir: /app
+    command: sh -c "npm ci && npm run dev -- --host 0.0.0.0"
+    depends_on:
+      backend:
+        condition: service_started
+      visao:
+        condition: service_started
+    environment:
+      VITE_BACKEND_URL: http://visao:8000
+      VITE_AUTH_URL: http://backend:3000
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    ports:
+      - "5173:5173"
+
+volumes:
+  postgres_dev:
+  backend_node_modules:
+  frontend_node_modules:
+  visao_pip_cache:
+  roteador_gravacoes_dev:

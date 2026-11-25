@@ -1,0 +1,253 @@
+ambiente: dev
+
+sistema:
+  nome: GDEL Vigia
+  fuso: America/Sao_Paulo
+
+servidor:
+  host: 127.0.0.1
+  porta: 8000
+  sessao_horas: 12
+  cookie_seguro: false
+  proxies_confiaveis: 127.0.0.1
+
+lojas:
+  bologna:
+    nome: Bologna Life
+    pdv: ${TOUCHPAY_PDV_BOLOGNA:-}
+  itacolomi:
+    nome: Parque do Itacolomi
+    pdv: ${TOUCHPAY_PDV_ITACOLOMI:-}
+  abbott:
+    nome: Abbott
+    pdv: "${TOUCHPAY_PDV_ABBOTT:-}"
+
+cameras:
+  bolognalife2:
+    descricao: Bologna · câmera 1
+    caminho: live/bolognalife2
+    loja: bologna
+    cobre_totem: auto
+  bolognalife2b:
+    descricao: Bologna · câmera 2
+    caminho: live/bolognalife2b
+    loja: bologna
+    cobre_totem: auto
+  itacolomi:
+    descricao: Parque do Itacolomi
+    caminho: live/itacolomi
+    loja: itacolomi
+    cobre_totem: auto
+  abbott1:
+    descricao: Abbott · câmera 1
+    caminho: live/abbott1
+    loja: abbott
+    cobre_totem: auto
+  abbott2:
+    descricao: Abbott · câmera 2
+    caminho: live/abbott2
+    loja: abbott
+    cobre_totem: auto
+
+roteador:
+  rtmp: rtmp://127.0.0.1:1935
+  rtsp: rtsp://127.0.0.1:8554
+  usuario: ""
+  senha: ""
+  playback: http://127.0.0.1:9996
+  webrtc: http://127.0.0.1:8889
+  api: http://127.0.0.1:9997
+  config_gerada: roteador/mediamtx.yml
+  rtmp_publico: ${VIGIA_RTMP_PUBLICO:-}
+
+visao:
+  modelo: ${VIGIA_MODELO:-modelos/teste-cvat.pt}
+  classes:
+    cliente: cliente
+    produto: produto_na_mao
+    totem: maquininha
+    celular: celular
+  conf_produto: 0.3
+  produto_min_deteccoes: 2
+  produto_janela_s: 2.0
+  produto_intervalo_s: 8.0
+  mao_vazia_antes_s: 4.0
+  mesmo_objeto: 0.7
+  conf_totem: 0.3
+  totem_min_deteccoes: 12
+  pagar_min_s: 3.0
+  imgsz: 480
+  threads: 2
+  fps_analise: 6
+  largura_analise: 640
+  conf_pessoa: 0.35
+  conf_minima: 0.1
+  movimento_limiar: 20
+  movimento_area: 0.003
+  ia_manter_s: 3.0
+  ia_intervalo_s: 1.0
+  esquecer_s: 10.0
+  herdar_max_dist: 0.15
+  min_visivel_s: 2.0
+  min_deteccoes: 5
+
+coleta:
+  ativa: true
+  intervalo_s: 4
+  diversidade: 0.05
+  memoria_s: 60
+  max_por_dia: 1500
+  espaco_minimo_gb: 5
+  qualidade_jpeg: 95
+
+fusao:
+  janela_cameras_s: 15
+  aparencia_minima: 0.55
+  aparencia_minima_unica: 0.2
+  pegada_duplicada_s: 2.0
+  aguardar_pagamento_s: 120
+  pagamento_antes_s: 30
+  revisar_tardios_min: 30
+  grupo_entrada_s: 20
+  visita_minima_s: 8
+  tolerancia_itens: 1
+  produto_firme_s: 1.5
+  sem_compra:
+    espera_padrao_s: 300
+  reposicao:
+    horarios: []
+    usar_movimentacoes_estoque: true
+    margem_movimentacao_s: 300
+  pesos:
+    sem_pagamento: 60
+    totem_sem_pagamento: 15
+    nao_foi_ao_totem: 10
+    varias_pegadas: 5
+    saiu_com_produto: 10
+    pegada_fraca: 0
+    entrou_com_objeto: -15
+    itens_a_mais: 40
+    acompanhante_pagou: -45
+    rastreio_fragmentado: -10
+    provavel_fragmento: -25
+  niveis:
+    alerta: 70
+    atencao: 40
+
+triagem_ia:
+  ativa: true
+  provedor: ${TRIAGEM_PROVEDOR:-openai}
+  modelo: ${TRIAGEM_MODELO:-gpt-5.5}
+  esforco: medium
+  score_acima_de: 80
+  espera_clipe_s: 150
+  max_fotos: 8
+  max_clipes: 2
+  quadros_por_clipe: 6
+  lado_maximo_px: 1024
+  descartar_falso_positivo: true
+  confianca_descarte: 80
+  tentativas: 3
+  intervalo_tentativas_s: 60
+
+touchpay:
+  url: ${TOUCHPAY_API_URL:-https://touchpay.market}
+  autenticacao:
+    token: ${TOUCHPAY_TOKEN:-}
+    email: ${TOUCHPAY_EMAIL:-}
+    senha: ${TOUCHPAY_SENHA:-}
+    login_caminho: ${TOUCHPAY_LOGIN_CAMINHO:-}
+    campo_token: token
+  fuso_api: America/Sao_Paulo
+  intervalo_s: 20
+  releitura_min: 10
+  carga_inicial_h: 2
+  estoque:
+    ativo: true
+    intervalo_s: 120
+
+gravacoes:
+  pasta: roteador/gravacoes
+  limpar_a_cada_min: 5
+
+dados:
+  banco: ${DATABASE_URL:-}
+  evidencias: dados/evidencias
+  totem: dados/totem
+  treino: dados/treino
+
+ambientes:
+  dev: {}
+  remoto:
+    servidor:
+      porta: ${VIGIA_PORTA_REMOTO:-8001}
+    roteador:
+      rtmp: ${VIGIA_ROTEADOR_REMOTO:-rtmp://127.0.0.1:1945}
+      rtsp: ""
+      usuario: leitor
+      senha: ${VIGIA_LEITOR_SENHA:-}
+      playback: ""
+      webrtc: ""
+      api: ""
+    gravacoes:
+      pasta: ""
+    dados:
+      banco: ${DATABASE_URL:-}
+      evidencias: dados/remoto/evidencias
+      totem: dados/totem
+      treino: dados/remoto/treino
+  docker-remoto:
+    servidor:
+      host: 0.0.0.0
+    roteador:
+      rtmp: ${VIGIA_ROTEADOR_REMOTO:-rtmp://127.0.0.1:1945}
+      rtsp: ""
+      usuario: leitor
+      senha: ${VIGIA_LEITOR_SENHA:-}
+      playback: ""
+      webrtc: ""
+      api: ""
+    gravacoes:
+      pasta: ""
+    dados:
+      evidencias: dados/remoto/evidencias
+      totem: dados/totem
+      treino: dados/remoto/treino
+  # Usado pelo docker-compose.yml da raiz: backend e roteador rodam em containers
+  # separados na mesma rede, então os endpoints do roteador usam o nome do serviço
+  # em vez de 127.0.0.1, e o servidor escuta em todas as interfaces do container.
+  # O roteador local (container "roteador") espelha as câmeras reais do roteador
+  # de produção via source pull (veja roteador/gerar_espelho_dev.py) e grava
+  # localmente, dando ao visao uma API de playback própria para gerar clipes em dev.
+  docker:
+    servidor:
+      host: 0.0.0.0
+    roteador:
+      prefixo_gravacao: live
+      rtmp: rtmp://roteador:1935
+      rtsp: rtsp://roteador:8554
+      playback: http://roteador:9996
+      webrtc: http://roteador:8889
+      api: http://roteador:9997
+    gravacoes:
+      pasta: /gravacoes
+  prod-docker:
+    servidor:
+      host: 0.0.0.0
+      cookie_seguro: ${VIGIA_COOKIE_SEGURO:-false}
+      proxies_confiaveis: ${VIGIA_REDE:-172.30.57.0/24}
+    roteador:
+      rtmp: rtmp://roteador:1935
+      rtsp: rtsp://roteador:8554
+      playback: http://roteador:9996
+      webrtc: http://roteador:8889
+      api: http://roteador:9997
+      config_gerada: /roteador-config/mediamtx.yml
+    gravacoes:
+      pasta: /gravacoes
+  prod:
+    servidor:
+      host: 127.0.0.1
+      cookie_seguro: true
+    roteador:
+      webrtc: http://127.0.0.1:8889

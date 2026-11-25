@@ -1,0 +1,136 @@
+name: gdel-vigia-prod-novo
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: vigia-postgres-prod-novo
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-vigia}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-vigia}
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vigia} -d ${POSTGRES_DB:-vigia}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [vigia]
+
+  roteador-config:
+    build:
+      context: .
+      dockerfile: visao/Dockerfile
+    container_name: vigia-roteador-config-prod-novo
+    restart: "no"
+    working_dir: /app/roteador
+    command:
+      - python
+      - gerar.py
+      - --docker
+      - --ip-backend=${VIGIA_IP_VISAO:-172.30.57.10}
+      - --hosts-publicos=${VIGIA_HOSTS_PUBLICOS:-}
+      - --webrtc-udp=${VIGIA_PORTA_WEBRTC_UDP:-8289}
+      - --webrtc-tcp=${VIGIA_PORTA_WEBRTC_TCP:-8290}
+      - --ip=${VIGIA_IP_PUBLICO:-IP_DO_SERVIDOR}
+      - --porta-rtmp-publica=${VIGIA_PORTA_RTMP:-1945}
+      - --entrada=/app/roteador/roteador.yml
+      - --saida=/saida/mediamtx.yml
+    volumes:
+      - roteador_config:/saida
+    networks: [vigia]
+
+  roteador:
+    image: bluenviron/mediamtx:1.21.3-ffmpeg
+    container_name: vigia-roteador-prod-novo
+    restart: unless-stopped
+    command: ["/saida/mediamtx.yml"]
+    depends_on:
+      roteador-config:
+        condition: service_completed_successfully
+    ports:
+      - "${VIGIA_PORTA_RTMP:-1945}:1935"
+      - "${VIGIA_PORTA_WEBRTC_UDP:-8289}:${VIGIA_PORTA_WEBRTC_UDP:-8289}/udp"
+      - "${VIGIA_PORTA_WEBRTC_TCP:-8290}:${VIGIA_PORTA_WEBRTC_TCP:-8290}"
+    volumes:
+      - roteador_config:/saida:ro
+      - gravacoes:/gravacoes
+    ulimits:
+      core: 0
+    networks: [vigia]
+
+  backend:
+    build:
+      context: backend
+      dockerfile: Dockerfile
+    container_name: vigia-backend-prod-novo
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-vigia}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-vigia}
+      VIGIA_PORTA_BACKEND: 3000
+      VIGIA_HOST_BACKEND: 0.0.0.0
+      VIGIA_COOKIE_SEGURO: ${VIGIA_COOKIE_SEGURO:-false}
+      VIGIA_PROXIES_CONFIAVEIS: ${VIGIA_REDE:-172.30.57.0/24}
+    command: ["sh", "-c", "npx prisma migrate deploy && npm run prisma:seed; node dist/main.js"]
+    ports:
+      - "127.0.0.1:3000:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3000/api/auth/eu', r => process.exit(r.statusCode ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks: [vigia]
+
+  visao:
+    build:
+      context: .
+      dockerfile: visao/Dockerfile
+    container_name: vigia-visao-prod-novo
+    restart: unless-stopped
+    depends_on:
+      roteador:
+        condition: service_started
+      backend:
+        condition: service_healthy
+    environment:
+      VIGIA_AMBIENTE: prod-docker
+      VIGIA_COOKIE_SEGURO: ${VIGIA_COOKIE_SEGURO:-false}
+      VIGIA_REDE: ${VIGIA_REDE:-172.30.57.0/24}
+      VIGIA_RTMP_PUBLICO: rtmp://${VIGIA_IP_PUBLICO:-IP_DO_SERVIDOR}:${VIGIA_PORTA_RTMP:-1945}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-vigia}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-vigia}
+    env_file:
+      - ./visao/.env
+    ports:
+      - "${VIGIA_PORTA_PAINEL:-8790}:8000"
+    volumes:
+      - dados:/app/visao/dados
+      - roteador_config:/roteador-config:ro
+      - gravacoes:/gravacoes
+    ulimits:
+      core: 0
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/config-publica', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      vigia:
+        ipv4_address: ${VIGIA_IP_VISAO:-172.30.57.10}
+
+networks:
+  vigia:
+    ipam:
+      config:
+        - subnet: ${VIGIA_REDE:-172.30.57.0/24}
+
+volumes:
+  roteador_config:
+  gravacoes:
+  dados:
+  postgres:

@@ -1,0 +1,22 @@
+[Unit]
+Description=GDEL Vigia - backend (login e usuários)
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=vigia
+Group=vigia
+WorkingDirectory=/opt/gdel-vigia/backend
+EnvironmentFile=/opt/gdel-vigia/backend/.env
+ExecStartPre=/usr/bin/npx prisma migrate deploy
+ExecStart=/usr/bin/node dist/main.js
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
