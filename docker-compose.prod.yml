@@ -105,8 +105,6 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-vigia}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-vigia}
     env_file:
       - ./visao/.env
-    ports:
-      - "${VIGIA_PORTA_PAINEL:-8790}:8000"
     volumes:
       - dados:/app/visao/dados
       - roteador_config:/roteador-config:ro
@@ -122,6 +120,21 @@ services:
     networks:
       vigia:
         ipv4_address: ${VIGIA_IP_VISAO:-172.30.57.10}
+
+  nginx:
+    build:
+      context: .
+      dockerfile: nginx.Dockerfile
+    container_name: vigia-nginx-prod-novo
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+      visao:
+        condition: service_started
+    ports:
+      - "${VIGIA_PORTA_PAINEL:-8790}:8000"
+    networks: [vigia]
 
 networks:
   vigia:
