@@ -77,7 +77,7 @@ services:
       VIGIA_PROXIES_CONFIAVEIS: ${VIGIA_REDE:-172.30.57.0/24}
     command: ["sh", "-c", "npx prisma migrate deploy && npm run prisma:seed; node dist/main.js"]
     ports:
-      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:${VIGIA_PORTA_BACKEND_HOST:-3000}:3000"
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3000/api/auth/eu', r => process.exit(r.statusCode ? 0 : 1)).on('error', () => process.exit(1))"]
       interval: 30s
